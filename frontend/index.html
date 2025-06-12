@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Monitoramento de APIs</title>
+  <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+  <h2>Monitoramento de APIs</h2>
+
+  <button onclick="monitorar()">Testar APIs</button>
+
+  <div id="resultados">
+    <h3>Status das APIs:</h3>
+    <div id="api-lista"></div>
+  </div>
+
+  <script>
+    async function monitorar() {
+      try {
+        const res = await fetch("/monitorar", { method: "POST" });
+        const data = await res.json();
+
+        if (res.ok) {
+          atualizarResultados(data.resultados);
+        } else {
+          atualizarResultados([]);
+        }
+
+      } catch (err) {
+        atualizarResultados([]);
+      }
+    }
+
+    function atualizarResultados(resultados) {
+      const container = document.getElementById("api-lista");
+      container.innerHTML = "";
+
+      resultados.forEach(api => {
+        const div = document.createElement("div");
+        div.className = "api-item " + (api.ok ? "api-ok" : "api-erro");
+
+        const statusEmoji = api.ok ? "🟢" : "🔴";
+        const tempo = api.tempo !== null ? ` | Tempo: ${api.tempo}ms` : "";
+
+        div.textContent = `${statusEmoji} ${api.nome} | Status: ${api.status}${tempo}`;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
