@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const mysql = require('mysql2/promise'); // 👈 importa MySQL com suporte a async/await
-const { testarTodasAPIs } = require('./monitora-apis');
+const { testarTodasAPIs, init: initMonitoraAPIs } = require('./monitora-apis'); // Modified import
 
 const app = express();
 app.use(cors());
@@ -18,6 +18,8 @@ const pool = mysql.createPool({
   port: 3306,
   waitForConnections: true,
 });
+
+initMonitoraAPIs(pool); // Initialize monitora-apis with the pool
 
 // 📌 Exemplo: rota usando banco (opcional, se quiser salvar logs)
 app.post('/monitorar', async (req, res) => {
