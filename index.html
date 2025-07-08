@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Monitoramento de APIs</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f8f4f8;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(117, 28, 106, 0.1);
+      padding: 32px 24px 24px 24px;
+      border: 1px solid rgba(117, 28, 106, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #751c6a;
+      margin-bottom: 8px;
+    }
+    .last-update {
+      text-align: center;
+      color: #888;
+      font-size: 0.95em;
+      margin-bottom: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+    }
+    th, td {
+      padding: 12px 8px;
+      text-align: left;
+    }
+    th {
+      background: #751c6a;
+      color: #fff;
+      font-weight: 600;
+    }
+    tr {
+      border-bottom: 1px solid #e2e8f0;
+    }
+    tr:last-child {
+      border-bottom: none;
+    }
+    .status-ok {
+      color: #2ecc40;
+      font-weight: bold;
+    }
+    .status-fail {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    .status-unknown {
+      color: #aaa;
+      font-weight: bold;
+    }
+    .refresh-info {
+      text-align: right;
+      color: #888;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #e2e8f0;
+      border-top: 3px solid #751c6a;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Dashboard de Monitoramento de APIs</h1>
+    <div class="last-update" id="last-update">Carregando...</div>
+    <div class="refresh-info">Atualiza automaticamente a cada 10 minutos</div>
+    <table>
+      <thead>
+        <tr>
+          <th>API</th>
+          <th>Status</th>
+          <th>Tempo (ms)</th>
+        </tr>
+      </thead>
+      <tbody id="api-table-body">
+        <tr><td colspan="3" style="text-align:center"><span class="spinner"></span>Carregando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    async function fetchStatus() {
+      const tbody = document.getElementById('api-table-body');
+      const lastUpdate = document.getElementById('last-update');
+      tbody.innerHTML = `<tr><td colspan='3' style='text-align:center'><span class='spinner'></span>Carregando...</td></tr>`;
+      try {
+        const res = await fetch('/status-apis');
+        const data = await res.json();
+        if (!data.resultados || !Array.isArray(data.resultados)) {
+          tbody.innerHTML = `<tr><td colspan='3' style='text-align:center;color:#e74c3c'>Nenhum dado disponível</td></tr>`;
+          lastUpdate.textContent = 'Sem dados recentes.';
+          return;
+        }
+        tbody.innerHTML = '';
+        data.resultados.forEach(api => {
+          let statusClass = 'status-unknown';
+          let statusText = 'Desconhecido';
+          if (api.ok === true) {
+            statusClass = 'status-ok';
+            statusText = 'Online';
+          } else if (api.ok === false) {
+            statusClass = 'status-fail';
+            statusText = 'Falha';
+          }
+          tbody.innerHTML += `
+            <tr>
+              <td>${api.nome || api.name || '-'}</td>
+              <td class="${statusClass}">${statusText} ${api.status ? '('+api.status+')' : ''}</td>
+              <td>${api.tempo !== undefined && api.tempo !== null ? api.tempo : '-'}</td>
+            </tr>
+          `;
+        });
+        if (data.atualizadoEm) {
+          const dt = new Date(data.atualizadoEm);
+          lastUpdate.textContent = 'Última atualização: ' + dt.toLocaleString('pt-BR');
+        } else {
+          lastUpdate.textContent = 'Sem dados recentes.';
+        }
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan='3' style='text-align:center;color:#e74c3c'>Erro ao buscar dados</td></tr>`;
+        lastUpdate.textContent = 'Erro ao buscar dados.';
+      }
+    }
+    fetchStatus();
+    setInterval(fetchStatus, 10 * 60 * 1000); // 10 minutos
+  </script>
+</body>
+</html>

@@ -55,8 +55,17 @@ async function buscarApisNoBanco() {
 }
 
 // 🚦 Testa as APIs
-async function testarTodasAPIs() {
-  const apisParaMonitorar = await buscarApisNoBanco();
+async function testarTodasAPIs(apisParaTestar = null) {
+  let apisParaMonitorar;
+  
+  if (apisParaTestar) {
+    // Se uma lista de APIs foi fornecida, use ela
+    apisParaMonitorar = apisParaTestar;
+  } else {
+    // Caso contrário, busque no banco de dados
+    apisParaMonitorar = await buscarApisNoBanco();
+  }
+  
   if (!apisParaMonitorar || apisParaMonitorar.length === 0) {
     throw new Error("Nenhuma API para monitorar foi encontrada.");
   }
